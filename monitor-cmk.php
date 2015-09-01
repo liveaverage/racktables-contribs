@@ -6,9 +6,6 @@
 
 //INSTALLATION NOTES: Requires Check_MK 1.2.6p5 or above to use the webapi functionality
 
-//curl ***REMOVED***
-//curl ***REMOVED***
-
 # RackTables Tab
 # -----------------------------------------------------------------------------------------
 $tab['object']['CheckMK'] = 'Check MK'; // Tab title
@@ -164,15 +161,9 @@ function renderCMK()
 
 function renderCMKstatus($target)
 {
-	//Fix me -- this should call view.py and request JSON output
-	***REMOVED***
-	//view.py?view_name=hoststatus&host=hostname
 	
 	global $cmk_user, $cmk_pass, $cmk_url, $cmk_fld, $cmk_pre, $cmk_debug, $attribute_id;
 	$cmk_url_status = $cmk_url.'view.py?view_name=hoststatus&host='.$target.'&output_format=JSON&_username='.$cmk_user.'&_secret='.$cmk_pass;
-	//echo $cmk_url_status;
-
-	//echo $cmk_url_status;
 	$status = json_decode(CMKcurl($cmk_url_status, ""));
 
 	echo '<div class=portlet><h2>Status</h2><h3>'.$target.'</h3>';
