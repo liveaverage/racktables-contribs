@@ -222,22 +222,13 @@ function CMKadd($object, $target, $dest)
 	$loc = explode(':',preg_replace('/\s+/', '', getLocation($object)));
 	$dest = strtolower($cmk_fld.'/row_'.($loc[0]).'/'.$cmk_pre.'-'.($loc[1]));
 
-	$connection = @fsockopen($host, 6556);
-
-    if (is_resource($connection))
-    {
-        $tag_agent = 'cmk-agent';
-        fclose($connection);
-    }
-    else
-    {
-        $tag_agent = 'ping';
-    }
+	//Query for appropriate agent tag (Check_MK, SNMP, or Ping-only)
+        $tag_agent = CMKagentcheck($target);
 
 	$cmk_url_addhost = $cmk_url.'webapi.py?action=add_host&_username='.$cmk_user.'&_secret='.$cmk_pass.'&effective_attributes=1';
 	$cmk_url_adddata = array( 
 		'attributes' => array(
-			'tag_agent'=> 'ping',
+			'tag_agent'=> $tag_agent,
 			'tag_criticality' => 'prod'),
 		'hostname' => urlencode($target),
 		'folder' => urlencode($dest)
@@ -289,6 +280,31 @@ function CMKactivate()
 	$cmk_url_refhost = $cmk_url.'webapi.py?action=activate_changes&_username='.$cmk_user.'&_secret='.$cmk_pass.'&mode=all'; //Others might not want to activate ALL site changes
 
 	return CMKcurl($cmk_url_refhost, "");
+}
+
+function CMKagentcheck($target)
+{
+	global $cmk_snmp;
+	$tag_agent = 'ping';
+
+	$fp_cmka = fsockopen("tcp://".$target, 6556);
+	$fp_snmp = snmpget($target, $cmk_snmp, "sysName.0");
+
+	if ($fp_cmka)
+	{
+		//Detected CMK Agent (always use first)
+		$tag_agent = 'cmk-agent';
+	}
+	elseif ($fp_snmp)
+	{
+		//Detected SNMP is listening
+		$tag_agent = 'snmp-only';
+	}
+
+	fclose($fp_cmka);
+
+	return $tag_agent;
+
 }
 
 function resultMsg($target, $action, $result)
